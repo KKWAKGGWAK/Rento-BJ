@@ -1,0 +1,41 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest   # 실무는 버전 고정 권장
+    container_name: prometheus
+    ports: ["9090:9090"]
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-lifecycle"                   # /-/reload 가능
+      - "--storage.tsdb.retention.time=15d"        # 보존기간 예시
+    volumes:
+      - ./ops:/etc/prometheus:ro
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports: ["3100:3100"]
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./ops:/etc/loki:ro
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./ops:/etc/promtail:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro  # 도커 컨테이너 로그
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports: ["3001:3000"]                          # React가 3000 쓰므로 3001로
+    environment:
+      # 서브패스로 서빙할 때만 설정(필요 없으면 삭제)
+      # GF_SERVER_ROOT_URL: http://localhost/grafana
+      # GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_INSTALL_PLUGINS: "grafana-piechart-panel"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro       # (선택)
+    depends_on: [prometheus, loki]

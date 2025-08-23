@@ -1,0 +1,13 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - metrics
+          - prometheus
+
+server:
+  tomcat:
+    mbeanregistry:
+      enabled: true

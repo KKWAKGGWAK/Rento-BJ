@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus 자기 자신
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  # Spring Boot (Actuator + Micrometer Prometheus)
+  - job_name: 'spring-app'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:8080']           # 컨테이너일 때
+        labels:
+          app: rento
+    # 호스트에서 앱이 뜨는 경우 예시(맥/윈도우):
+    # static_configs:
+    #   - targets: ['host.docker.internal:8080']
