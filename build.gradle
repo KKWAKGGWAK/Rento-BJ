@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.4.5'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'java-test-fixtures'
+    id 'com.google.cloud.tools.jib' version '3.4.3'
 }
 
 group = 'com.kbe5'
@@ -61,6 +62,29 @@ dependencies {
 
     // Prometheus
     implementation 'io.micrometer:micrometer-registry-prometheus'
+}
+
+jib {
+    from {
+        image = 'eclipse-temurin:17-jre'
+        // Apple Silicon에서 amd64 이미지를 강제해야 하면 아래 주석을 해제하세요.
+        platforms {
+            platform {
+                os = 'linux'
+                architecture = 'arm64'
+            }
+        }
+    }
+    to {
+        image = 'rento-app:0.0.1'   // docker-compose.yml의 app.image와 동일
+    }
+    container {
+        ports = ['8080']
+        jvmFlags = ['-XX:MaxRAMPercentage=75.0', '-Duser.timezone=Asia/Seoul']
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+        // Spring Boot면 mainClass 자동 인식. 일반 자바면 다음 줄로 지정:
+        // mainClass = 'com.rento.rento.RentoApplication'
+    }
 }
 
 tasks.named('test') {

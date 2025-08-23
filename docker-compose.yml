@@ -1,41 +1,81 @@
+version: "3.9"
+
 services:
   prometheus:
     image: prom/prometheus:latest   # 실무는 버전 고정 권장
     container_name: prometheus
+    restart: unless-stopped
     ports: ["9090:9090"]
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--web.enable-lifecycle"                   # /-/reload 가능
-      - "--storage.tsdb.retention.time=15d"        # 보존기간 예시
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle                   # /-/reload 가능
+      - --storage.tsdb.retention.time=15d        # 보존기간 예시
+      - --web.enable-remote-write-receiver
     volumes:
-      - ./ops:/etc/prometheus:ro
+      - ./ops/prometheus.yml:/etc/prometheus/prometheus.yml:ro   # 파일→파일 매핑
 
   loki:
     image: grafana/loki:latest
     container_name: loki
+    restart: unless-stopped
     ports: ["3100:3100"]
-    command: -config.file=/etc/loki/loki-config.yml
+    command: ["-config.file=/etc/loki/loki-config.yml"]
     volumes:
-      - ./ops:/etc/loki:ro
+      - ./ops/loki-config.yml:/etc/loki/loki-config.yml:ro       # 파일→파일 매핑
 
   promtail:
     image: grafana/promtail:latest
     container_name: promtail
-    command: -config.file=/etc/promtail/promtail.yml
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/promtail.yml"]
     volumes:
-      - ./ops:/etc/promtail:ro
+      - ./ops/promtail.yml:/etc/promtail/promtail.yml:ro         # 파일→파일 매핑
       - /var/log:/var/log:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro  # 도커 컨테이너 로그
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    restart: unless-stopped
     ports: ["3001:3000"]                          # React가 3000 쓰므로 3001로
     environment:
-      # 서브패스로 서빙할 때만 설정(필요 없으면 삭제)
-      # GF_SERVER_ROOT_URL: http://localhost/grafana
-      # GF_SERVER_SERVE_FROM_SUB_PATH: "true"
-      GF_INSTALL_PLUGINS: "grafana-piechart-panel"
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro       # (선택)
-    depends_on: [prometheus, loki]
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on: [prometheus, loki, tempo]
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./ops:/etc/tempo:ro
+      - ./docker/tempo/data:/var/tempo
+    ports:
+      - "3200:3200"   # Grafana 데이터소스 URL
+      - "4317:4317"   # OTLP gRPC (앱이 직접 전송)
+      - "4318:4318"   # OTLP HTTP (옵션)
+
+  # 🆕 Spring Boot 애플리케이션 서비스 추가
+  app:
+    image: rento-app:0.0.1
+    container_name: rento-app
+    restart: unless-stopped
+    depends_on:
+      - tempo
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/logs
+    environment:
+      SPRING_PROFILES_ACTIVE: deploy
+      OTEL_SERVICE_NAME: rento-service
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=rento,env=dev
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4317
