@@ -32,6 +32,7 @@ services:
       - ./ops/promtail.yml:/etc/promtail/promtail.yml:ro         # 파일→파일 매핑
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./docker/promtail:/run/promtail        # ✅ 새로 추가(RW)
 
   grafana:
     image: grafana/grafana:latest
@@ -70,12 +71,16 @@ services:
       - ./logs:/logs
     environment:
       SPRING_PROFILES_ACTIVE: deploy
-      OTEL_SERVICE_NAME: rento-service
-      OTEL_RESOURCE_ATTRIBUTES: service.namespace=rento,env=dev
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
+#      OTEL_SERVICE_NAME: rento-service
+#      OTEL_RESOURCE_ATTRIBUTES: service.namespace=rento,env=dev
+#      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+#      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+#      OTEL_TRACES_EXPORTER: otlp
+#      OTEL_METRICS_EXPORTER: none
+#      OTEL_LOGS_EXPORTER: none
+      SPRING_APPLICATION_NAME: rento-service
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4317
+#      MANAGEMENT_OTLP_TRACING_PROTOCOL: grpc
+#      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4317
+      # 위에거 아니면
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces

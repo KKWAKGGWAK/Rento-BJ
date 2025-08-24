@@ -62,6 +62,10 @@ dependencies {
 
     // Prometheus
     implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // OTEL, OTLP
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation "io.opentelemetry:opentelemetry-exporter-otlp"
 }
 
 jib {
@@ -85,6 +89,8 @@ jib {
         // Spring Boot면 mainClass 자동 인식. 일반 자바면 다음 줄로 지정:
         // mainClass = 'com.rento.rento.RentoApplication'
     }
+
+    dockerClient { executable = '/usr/local/bin/docker' } // 실제 출력값으로 교체
 }
 
 tasks.named('test') {

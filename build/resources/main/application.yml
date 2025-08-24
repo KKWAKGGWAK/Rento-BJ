@@ -6,6 +6,12 @@ management:
           - health
           - metrics
           - prometheus
+  tracing:
+    enabled: true
+    sampling.probability: 1.0
+    otlp.tracing:
+      endpoint: http://tempo:4317
+      protocol: grpc
 
 server:
   tomcat:

@@ -5,17 +5,22 @@ distributor:
   receivers:
     otlp:
       protocols:
-        http: {}
+        http:
+          endpoint: 0.0.0.0:4318
         grpc:
           endpoint: 0.0.0.0:4317
+    zipkin:
+      endpoint: 0.0.0.0:9411
     jaeger:
       protocols:
-        grpc: {}
-        thrift_http: {}
-        thrift_binary: {}
-        thrift_compact: {}
-    zipkin: {}
-    opencensus: {}
+        grpc:
+          endpoint: 0.0.0.0:14250
+        thrift_http:
+          endpoint: 0.0.0.0:14268
+        thrift_binary:
+          endpoint: 0.0.0.0:6832
+        thrift_compact:
+          endpoint: 0.0.0.0:6831
 
 ingester:
   max_block_duration: 5m
@@ -33,6 +38,11 @@ metrics_generator:
     service_graphs:
       histogram_buckets: [0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10]
     span_metrics: {}
+    local_blocks:
+      # 선택: 서버 스팬만이 아니라 모든 스팬에서 TraceQL metrics 계산
+      filter_server_spans: false
+      # 선택: 과거 구간까지 metrics 질의하려면 로컬 블록을 저장소로 flush
+      flush_to_storage: true
   storage:
     path: /var/tempo/generator/wal   # ← /var/tempo로 통일
     remote_write:
