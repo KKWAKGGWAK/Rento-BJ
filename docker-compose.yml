@@ -84,3 +84,15 @@ services:
 #      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4317
       # 위에거 아니면
       MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0.40
+    restart: always
+    environment:
+      MYSQL_DATABASE: rento
+      MYSQL_USER: root
+      MYSQL_PASSWORD:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
