@@ -70,7 +70,7 @@ services:
     volumes:
       - ./logs:/logs
     environment:
-      SPRING_PROFILES_ACTIVE: application
+      SPRING_PROFILES_ACTIVE: deploy
 #      OTEL_SERVICE_NAME: rento-service
 #      OTEL_RESOURCE_ATTRIBUTES: service.namespace=rento,env=dev
 #      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
@@ -84,10 +84,6 @@ services:
 #      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4317
       # 위에거 아니면
       MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
-      # 최초 스키마 생성/갱신 전략 (개발 중엔 update, 완성 후엔 none/validate 권장)
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
 
   mysql:
     container_name: mysql
